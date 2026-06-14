@@ -1,0 +1,70 @@
+/** @type {import('tailwindcss').Config} */
+export default {
+  content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
+  darkMode: 'class',
+  theme: {
+    extend: {
+      colors: {
+        // Smart Care System
+        'forest-ink': '#0f3e17',
+        'sage-wash': '#b1dbb8',
+        'mist-blue': '#b6ced5',
+        'mint-veil': '#cfe7d3',
+        'linen': '#e1f4df',
+        'linen-white': '#fffefc',
+        'hairline-gray': '#e5e7eb',
+        'charcoal': '#222222',
+        'graphite': '#333333',
+        'true-black': '#000000',
+
+        // Preserved for legacy components during transition
+        indigo: { 50: '#eef2ff', 100: '#e0e7ff', 500: '#6366f1', 700: '#3730a3', 900: '#1e1b4b' },
+        slate: { 50: '#f1f5f9', 200: '#cbd5e1', 500: '#475569', 800: '#0f172a' },
+        success: { 50: '#f0fdf4', 100: '#dcfce7', 500: '#22c55e', 700: '#15803d' },
+        warning: { 50: '#fffbeb', 100: '#fef3c7', 500: '#f59e0b', 700: '#b45309' },
+        danger:  { 50: '#fff1f2', 100: '#ffe4e6', 500: '#f43f5e', 700: '#be123c' },
+      },
+      fontFamily: {
+        sans: ['"Inter"', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        display: ['"Fraunces"', 'ui-serif', 'Georgia', 'serif'],
+        mono: ['"JetBrains Mono"', 'monospace'],
+      },
+      fontSize: {
+        'ease-caption': ['12px', { lineHeight: '1.5', letterSpacing: '-0.36px' }],
+        'ease-body-sm': ['14px', { lineHeight: '1.5', letterSpacing: '-0.42px' }],
+        'ease-body': ['18px', { lineHeight: '1.3', letterSpacing: '-0.54px' }],
+        'ease-subheading': ['23px', { lineHeight: '1.3', letterSpacing: '-0.69px' }],
+        'ease-heading-sm': ['28px', { lineHeight: '1.3', letterSpacing: '-0.84px' }],
+        'ease-heading': ['40px', { lineHeight: '1.35', letterSpacing: '-0.4px' }],
+        'ease-heading-lg': ['56px', { lineHeight: '1', letterSpacing: '-1.68px' }],
+        'ease-display': ['74px', { lineHeight: '1.05', letterSpacing: '-2.22px' }],
+      },
+      spacing: {
+        'ease-4': '4px',
+        'ease-7': '7px',
+        'ease-9': '9px',
+        'ease-11': '11px',
+        'ease-14': '14px',
+        'ease-18': '18px',
+        'ease-21': '21px',
+        'ease-28': '28px',
+        'ease-35': '35px',
+        'ease-42': '42px',
+        'ease-49': '49px',
+        'ease-56': '56px',
+        'ease-70': '70px',
+        'ease-76': '76px',
+        'ease-99': '99px',
+        'ease-156': '156px',
+        'ease-section': '80px',
+      },
+      borderRadius: {
+        'nav': '7px',
+        'cards': '14px',
+        'badges': '999px',
+        'buttons': '14px',
+      },
+    },
+  },
+  plugins: [],
+}

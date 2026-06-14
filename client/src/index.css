@@ -1,0 +1,133 @@
+@import '@fontsource/inter/300.css';
+@import '@fontsource/inter/400.css';
+@import '@fontsource/fraunces/300.css';
+@import '@fontsource/jetbrains-mono/400.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Smart Care Palette */
+  --color-forest-ink: #0f3e17;
+  --color-sage-wash: #b1dbb8;
+  --color-mist-blue: #b6ced5;
+  --color-mint-veil: #cfe7d3;
+  --color-linen: #e1f4df;
+  --color-linen-white: #fffefc;
+  --color-hairline-gray: #e5e7eb;
+  --color-charcoal: #222222;
+  --color-graphite: #333333;
+  --color-true-black: #000000;
+}
+
+@layer base {
+  *, *::before, *::after {
+    box-sizing: border-box;
+    border-color: var(--color-hairline-gray);
+  }
+
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    background-color: var(--color-linen-white);
+    color: var(--color-true-black);
+    font-family: 'Inter', sans-serif;
+    font-weight: 400;
+    line-height: 1.5;
+  }
+
+  /* Reset default shadows as Smart Care uses flat surfaces */
+  * {
+    box-shadow: none !important;
+  }
+
+  /* Typography Defaults */
+  h1, h2, h3, h4, h5, h6 {
+    color: var(--color-forest-ink);
+    font-weight: 300;
+  }
+}
+
+@layer components {
+  /* Primary Action Button */
+  .btn-primary {
+    @apply inline-flex items-center justify-center bg-forest-ink text-linen-white 
+           rounded-buttons px-ease-21 py-ease-14 text-ease-body-sm font-normal
+           transition-colors hover:bg-opacity-90;
+  }
+
+  /* Pill Badge */
+  .badge-pill, .badge {
+    @apply inline-flex items-center justify-center bg-mist-blue text-charcoal
+           rounded-badges px-ease-14 py-ease-7 text-ease-caption font-normal;
+  }
+
+  /* Fallback badges mapping for older components */
+  .badge-indigo { @apply badge-pill bg-mist-blue text-forest-ink; }
+  .badge-teal { @apply badge-pill bg-mint-veil text-forest-ink; }
+  .badge-success { @apply badge-pill bg-mint-veil text-forest-ink; }
+  .badge-warning { @apply badge-pill bg-linen text-charcoal; }
+  .badge-danger { @apply badge-pill bg-mist-blue text-danger-700; }
+  .badge-slate { @apply badge-pill bg-hairline-gray text-charcoal; }
+  
+  .badge-dark, .badge-dark-indigo, .badge-dark-success, .badge-dark-warning, .badge-dark-danger {
+    @apply badge-pill;
+  }
+
+  /* Product/Content Card */
+  .card, .card-flat {
+    @apply bg-linen-white rounded-cards p-ease-21 border border-hairline-gray shadow-none;
+  }
+  .card-hover, .card-dark, .card-dark-hover {
+    @apply card transition-colors hover:bg-mint-veil cursor-pointer;
+  }
+
+  /* Inputs */
+  .input {
+    @apply block w-full rounded-cards border border-hairline-gray px-ease-14 py-ease-11 text-ease-body-sm
+           transition-colors duration-200 focus:outline-none focus:border-forest-ink bg-linen-white text-charcoal;
+  }
+  .input-dark { @apply input; }
+  .input-error { @apply input border-danger-500; }
+  .input:focus { box-shadow: none !important; }
+
+  .label { @apply block text-ease-body-sm mb-ease-7 text-charcoal; }
+  .helper-text { @apply mt-ease-4 text-ease-caption text-graphite; }
+  .error-text { @apply mt-ease-4 text-ease-caption text-danger-700; }
+
+  /* Navigation Item */
+  .nav-item {
+    @apply text-charcoal rounded-nav px-ease-11 py-ease-7 text-ease-body-sm font-normal
+           hover:bg-mint-veil transition-colors;
+  }
+
+  /* Stats Block */
+  .stat-card {
+    @apply flex flex-col gap-ease-4 p-ease-21 bg-linen-white rounded-cards border border-hairline-gray;
+  }
+  .stat-value {
+    @apply text-ease-heading-lg font-mono font-light text-forest-ink tracking-tight;
+  }
+  .stat-label {
+    @apply text-ease-caption text-charcoal;
+  }
+
+  /* Section Block */
+  .section-block {
+    @apply flex flex-col gap-ease-14 mb-ease-section;
+  }
+}
+
+@layer utilities {
+  .ease-tracking-tight {
+    letter-spacing: -0.03em;
+  }
+  .page-container { @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8; }
+  .page-header { @apply mb-ease-28 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-ease-14; }
+  .doctor-panel { @apply h-full px-ease-21 py-ease-21; }
+}
