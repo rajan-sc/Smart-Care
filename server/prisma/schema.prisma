@@ -1,0 +1,529 @@
+// ============================================================
+// SmartCare — Prisma Schema
+// Database: PostgreSQL 17
+// ============================================================
+
+datasource db {
+  provider = "postgresql"
+}
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["fullTextSearchPostgres"]
+  binaryTargets   = ["native", "linux-musl-openssl-3.0.x"]
+}
+
+// ============================================================
+// ENUMS
+// ============================================================
+
+enum Role {
+  PATIENT
+  DOCTOR
+  CAREGIVER
+  ADMIN
+
+  @@map("role")
+}
+
+enum DayOfWeek {
+  MONDAY
+  TUESDAY
+  WEDNESDAY
+  THURSDAY
+  FRIDAY
+  SATURDAY
+  SUNDAY
+
+  @@map("day_of_week")
+}
+
+enum AppointmentStatus {
+  PENDING
+  CONFIRMED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+  NO_SHOW
+
+  @@map("appointment_status")
+}
+
+enum AppointmentType {
+  IN_PERSON
+  TELECONSULT
+
+  @@map("appointment_type")
+}
+
+enum QueueStatus {
+  WAITING
+  IN_PROGRESS
+  COMPLETED
+  SKIPPED
+
+  @@map("queue_status")
+}
+
+enum Frequency {
+  DAILY
+  TWICE_DAILY
+  THRICE_DAILY
+  WEEKLY
+  AS_NEEDED
+  CUSTOM
+
+  @@map("frequency")
+}
+
+enum MedicationLogStatus {
+  PENDING
+  TAKEN
+  SKIPPED
+  MISSED
+  SNOOZED
+
+  @@map("medication_log_status")
+}
+
+enum VitalType {
+  BLOOD_PRESSURE
+  GLUCOSE
+  PULSE
+  WEIGHT
+  TEMPERATURE
+  OXYGEN_SATURATION
+
+  @@map("vital_type")
+}
+
+enum NotificationType {
+  MEDICATION_REMINDER
+  APPOINTMENT_REMINDER
+  VITAL_ALERT
+  CAREGIVER_ALERT
+  SYSTEM
+
+  @@map("notification_type")
+}
+
+enum CaregiverLinkStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+
+  @@map("caregiver_link_status")
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCESS
+  FAILED
+  REFUNDED
+
+  @@map("payment_status")
+}
+
+enum TokenType {
+  RESET_PASSWORD
+  VERIFY_EMAIL
+
+  @@map("token_type")
+}
+
+// ============================================================
+// MODELS
+// ============================================================
+
+// ------------------------------------------------------------
+// 1. User — Central identity for all roles
+// ------------------------------------------------------------
+model User {
+  id           String    @id @default(uuid()) @db.Uuid
+  email        String    @unique
+  passwordHash String    @map("password_hash")
+  role         Role
+  firstName    String    @map("first_name") @db.VarChar(100)
+  lastName     String    @map("last_name") @db.VarChar(100)
+  phone        String?   @db.VarChar(20)
+  isVerified   Boolean   @default(false) @map("is_verified")
+  isActive     Boolean   @default(true) @map("is_active")
+  deletedAt    DateTime? @map("deleted_at") @db.Timestamptz
+  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt    DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+
+  // --- Relations ---
+  doctorProfile         DoctorProfile?
+  appointmentsAsPatient Appointment[]       @relation("PatientAppointments")
+  appointmentsAsDoctor  Appointment[]       @relation("DoctorAppointments")
+  queueTokensAsDoctor   QueueToken[]        @relation("DoctorQueueTokens")
+  queueTokensAsPatient  QueueToken[]        @relation("PatientQueueTokens")
+  medicines             Medicine[]
+  medicationLogs        MedicationLog[]
+  vitals                Vital[]
+  caregiverLinks        CaregiverLink[]     @relation("CaregiverUser")
+  patientLinks          CaregiverLink[]     @relation("PatientUser")
+  notifications         Notification[]
+  auditLogs             AuditLog[]
+  refreshTokens         RefreshToken[]
+  analyticsSnapshots    AnalyticsSnapshot[]
+  verificationTokens    VerificationToken[]
+  payments              Payment[]
+  medicalRecords        MedicalRecord[]
+
+  @@index([email])
+  @@index([role])
+  @@index([isActive, deletedAt])
+  @@map("users")
+}
+
+// ------------------------------------------------------------
+// 2. DoctorProfile — Extended profile for DOCTOR users
+// ------------------------------------------------------------
+model DoctorProfile {
+  id                     String   @id @default(uuid()) @db.Uuid
+  userId                 String   @unique @map("user_id") @db.Uuid
+  specialization         String   @db.VarChar(150)
+  clinicName             String   @map("clinic_name") @db.VarChar(200)
+  clinicAddress          String?  @map("clinic_address") @db.Text
+  consultationFee        Decimal  @map("consultation_fee") @db.Decimal(10, 2)
+  avgConsultationMinutes Int      @default(15) @map("avg_consultation_minutes")
+  createdAt              DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt              DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  // --- Relations ---
+  user         User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  availability DoctorAvailability[]
+  appointments Appointment[]
+
+  @@index([specialization])
+  @@map("doctor_profiles")
+}
+
+// ------------------------------------------------------------
+// 3. DoctorAvailability — Weekly recurring slot definitions
+// ------------------------------------------------------------
+model DoctorAvailability {
+  id              String    @id @default(uuid()) @db.Uuid
+  doctorProfileId String    @map("doctor_profile_id") @db.Uuid
+  dayOfWeek       DayOfWeek @map("day_of_week")
+  startTime       String    @map("start_time") @db.VarChar(5) // "09:00"
+  endTime         String    @map("end_time") @db.VarChar(5) // "17:00"
+  maxPatients     Int       @default(20) @map("max_patients")
+  isActive        Boolean   @default(true) @map("is_active")
+
+  // --- Relations ---
+  doctorProfile DoctorProfile @relation(fields: [doctorProfileId], references: [id], onDelete: Cascade)
+
+  @@unique([doctorProfileId, dayOfWeek, startTime], name: "uq_doctor_day_slot")
+  @@index([doctorProfileId, isActive])
+  @@map("doctor_availability")
+}
+
+// ------------------------------------------------------------
+// 4. Appointment — Scheduled visit between patient and doctor
+// ------------------------------------------------------------
+model Appointment {
+  id              String            @id @default(uuid()) @db.Uuid
+  patientId       String            @map("patient_id") @db.Uuid
+  doctorId        String            @map("doctor_id") @db.Uuid
+  doctorProfileId String            @map("doctor_profile_id") @db.Uuid
+  scheduledDate   DateTime          @map("scheduled_date") @db.Date
+  slotStart       DateTime          @map("slot_start") @db.Timestamptz
+  slotEnd         DateTime          @map("slot_end") @db.Timestamptz
+  tokenNumber     Int               @map("token_number")
+  status          AppointmentStatus @default(PENDING)
+  type            AppointmentType   @default(IN_PERSON)
+  notes           String?           @db.Text
+  clinicalNotes   String?           @map("clinical_notes") @db.Text
+  prescription    String?           @db.Text
+  meetingUrl      String?           @map("meeting_url") @db.VarChar(500)
+  cancelReason    String?           @map("cancel_reason") @db.Text
+  cancelledBy     String?           @map("cancelled_by") @db.Uuid
+  createdAt       DateTime          @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt       DateTime          @updatedAt @map("updated_at") @db.Timestamptz
+
+  // --- Relations ---
+  patient       User          @relation("PatientAppointments", fields: [patientId], references: [id], onDelete: Restrict)
+  doctor        User          @relation("DoctorAppointments", fields: [doctorId], references: [id], onDelete: Restrict)
+  doctorProfile DoctorProfile @relation(fields: [doctorProfileId], references: [id], onDelete: Restrict)
+  queueToken    QueueToken?
+  payment       Payment?
+
+  @@unique([doctorId, scheduledDate, tokenNumber], name: "uq_doctor_date_token")
+  @@index([patientId, status])
+  @@index([doctorId, scheduledDate])
+  @@index([scheduledDate, status])
+  @@index([status])
+  @@map("appointments")
+}
+
+// ------------------------------------------------------------
+// 5. QueueToken — Real-time queue position for an appointment
+// ------------------------------------------------------------
+model QueueToken {
+  id                   String      @id @default(uuid()) @db.Uuid
+  appointmentId        String      @unique @map("appointment_id") @db.Uuid
+  doctorId             String      @map("doctor_id") @db.Uuid
+  patientId            String      @map("patient_id") @db.Uuid
+  tokenNumber          Int         @map("token_number")
+  status               QueueStatus @default(WAITING)
+  estimatedWaitMinutes Int?        @map("estimated_wait_minutes")
+  calledAt             DateTime?   @map("called_at") @db.Timestamptz
+  completedAt          DateTime?   @map("completed_at") @db.Timestamptz
+  createdAt            DateTime    @default(now()) @map("created_at") @db.Timestamptz
+
+  // --- Relations ---
+  appointment Appointment @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+  doctor      User        @relation("DoctorQueueTokens", fields: [doctorId], references: [id], onDelete: Restrict)
+  patient     User        @relation("PatientQueueTokens", fields: [patientId], references: [id], onDelete: Restrict)
+
+  @@index([doctorId, status])
+  @@index([doctorId, createdAt])
+  @@map("queue_tokens")
+}
+
+// ------------------------------------------------------------
+// 6. Medicine — Recurring medication schedule definition
+// ------------------------------------------------------------
+model Medicine {
+  id           String    @id @default(uuid()) @db.Uuid
+  userId       String    @map("user_id") @db.Uuid
+  name         String    @db.VarChar(200)
+  dosage       String    @db.VarChar(50) // e.g. "500" or "10"
+  unit         String    @db.VarChar(30) // e.g. "mg", "ml", "tablets"
+  frequency    Frequency
+  timings      String[]  @db.VarChar(5) // ["08:00", "14:00", "21:00"]
+  startDate    DateTime  @map("start_date") @db.Date
+  endDate      DateTime? @map("end_date") @db.Date
+  instructions String?   @db.Text
+  isActive     Boolean   @default(true) @map("is_active")
+  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt    DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+
+  // --- Relations ---
+  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  medicationLogs MedicationLog[]
+
+  @@index([userId, isActive])
+  @@index([userId, startDate, endDate])
+  @@map("medicines")
+}
+
+// ------------------------------------------------------------
+// 7. MedicationLog — Individual dose-level adherence record
+// ------------------------------------------------------------
+model MedicationLog {
+  id          String              @id @default(uuid()) @db.Uuid
+  medicineId  String              @map("medicine_id") @db.Uuid
+  userId      String              @map("user_id") @db.Uuid
+  scheduledAt DateTime            @map("scheduled_at") @db.Timestamptz
+  takenAt     DateTime?           @map("taken_at") @db.Timestamptz
+  status      MedicationLogStatus @default(PENDING)
+  snoozeUntil DateTime?           @map("snooze_until") @db.Timestamptz
+  notes       String?             @db.Text
+  deletedAt   DateTime?           @map("deleted_at") @db.Timestamptz
+  createdAt   DateTime            @default(now()) @map("created_at") @db.Timestamptz
+
+  // --- Relations ---
+  medicine Medicine @relation(fields: [medicineId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@unique([medicineId, scheduledAt], name: "uq_medicine_scheduled")
+  @@index([userId, scheduledAt])
+  @@index([userId, status])
+  @@index([scheduledAt, status])
+  @@map("medication_logs")
+}
+
+// ------------------------------------------------------------
+// 8. Vital — Point-in-time health measurement
+// ------------------------------------------------------------
+model Vital {
+  id         String    @id @default(uuid()) @db.Uuid
+  userId     String    @map("user_id") @db.Uuid
+  vitalType  VitalType @map("type")
+  values     Json      @db.JsonB
+  notes      String?   @db.Text
+  recordedAt DateTime  @map("recorded_at") @db.Timestamptz
+  deletedAt  DateTime? @map("deleted_at") @db.Timestamptz
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  // --- Relations ---
+  user User @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@index([userId, vitalType, recordedAt])
+  @@index([userId, recordedAt])
+  @@map("vitals")
+}
+
+// ------------------------------------------------------------
+// 9. CaregiverLink — Permission-based caregiver-patient link
+// ------------------------------------------------------------
+model CaregiverLink {
+  id           String              @id @default(uuid()) @db.Uuid
+  caregiverId  String              @map("caregiver_id") @db.Uuid
+  patientId    String              @map("patient_id") @db.Uuid
+  relationship String              @db.VarChar(50) // "spouse", "child", "sibling", etc.
+  permissions  String[] // ["VIEW_VITALS", "VIEW_MEDICATIONS", "VIEW_APPOINTMENTS", "BOOK_APPOINTMENTS", "RECEIVE_ALERTS"]
+  status       CaregiverLinkStatus @default(PENDING)
+  createdAt    DateTime            @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt    DateTime            @updatedAt @map("updated_at") @db.Timestamptz
+
+  // --- Relations ---
+  caregiver User @relation("CaregiverUser", fields: [caregiverId], references: [id], onDelete: Cascade)
+  patient   User @relation("PatientUser", fields: [patientId], references: [id], onDelete: Cascade)
+
+  @@unique([caregiverId, patientId], name: "uq_caregiver_patient")
+  @@index([patientId, status])
+  @@map("caregiver_links")
+}
+
+// ------------------------------------------------------------
+// 10. Notification — Multi-channel notification record
+// ------------------------------------------------------------
+model Notification {
+  id        String           @id @default(uuid()) @db.Uuid
+  userId    String           @map("user_id") @db.Uuid
+  type      NotificationType
+  title     String           @db.VarChar(200)
+  message   String           @db.Text
+  isRead    Boolean          @default(false) @map("is_read")
+  readAt    DateTime?        @map("read_at") @db.Timestamptz
+  metadata  Json?            @db.JsonB
+  createdAt DateTime         @default(now()) @map("created_at") @db.Timestamptz
+
+  // --- Relations ---
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isRead])
+  @@index([userId, type, createdAt])
+  @@index([createdAt])
+  @@map("notifications")
+}
+
+// ------------------------------------------------------------
+// 11. AuditLog — Immutable system-wide change log
+// ------------------------------------------------------------
+model AuditLog {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String?  @map("user_id") @db.Uuid
+  action    String   @db.VarChar(50) // "CREATE", "UPDATE", "DELETE", "LOGIN"
+  entity    String   @db.VarChar(50) // "User", "Appointment", etc.
+  entityId  String   @map("entity_id") @db.VarChar(100)
+  oldValues Json?    @map("old_values") @db.JsonB
+  newValues Json?    @map("new_values") @db.JsonB
+  ipAddress String?  @map("ip_address") @db.VarChar(45) // IPv6 max length
+  userAgent String?  @map("user_agent") @db.Text
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  // --- Relations ---
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId, createdAt])
+  @@index([entity, entityId])
+  @@index([createdAt])
+  @@index([newValues(ops: JsonbPathOps)], type: Gin)
+  @@index([oldValues(ops: JsonbPathOps)], type: Gin)
+  @@map("audit_logs")
+}
+
+// ------------------------------------------------------------
+// 12. RefreshToken — JWT refresh token rotation tracking
+// ------------------------------------------------------------
+model RefreshToken {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  token     String   @unique
+  expiresAt DateTime @map("expires_at") @db.Timestamptz
+  isRevoked Boolean  @default(false) @map("is_revoked")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  // --- Relations ---
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isRevoked])
+  @@index([expiresAt])
+  @@map("refresh_tokens")
+}
+
+// ------------------------------------------------------------
+// 13. AnalyticsSnapshot — Nightly precomputed stats
+// ------------------------------------------------------------
+model AnalyticsSnapshot {
+  id            String   @id @default(uuid()) @db.Uuid
+  userId        String   @map("user_id") @db.Uuid
+  date          DateTime @db.Date
+  adherenceRate Float    @map("adherence_rate")
+  maxStreak     Int      @map("max_streak")
+  currentStreak Int      @map("current_streak")
+  delayedDoses  Int      @map("delayed_doses")
+  vitalsCount   Int      @map("vitals_count")
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, date], name: "uq_user_date")
+  @@index([date])
+  @@map("analytics_snapshots")
+}
+
+// ------------------------------------------------------------
+// 14. VerificationToken — Password reset and email verify tokens
+// ------------------------------------------------------------
+model VerificationToken {
+  id        String    @id @default(uuid()) @db.Uuid
+  userId    String    @map("user_id") @db.Uuid
+  token     String    @unique
+  type      TokenType
+  expiresAt DateTime  @map("expires_at") @db.Timestamptz
+  isUsed    Boolean   @default(false) @map("is_used")
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, type])
+  @@index([token])
+  @@map("verification_tokens")
+}
+
+// ------------------------------------------------------------
+// 15. Payment — Cashfree payment integration
+// ------------------------------------------------------------
+model Payment {
+  id               String        @id @default(uuid()) @db.Uuid
+  appointmentId    String        @unique @map("appointment_id") @db.Uuid
+  patientId        String        @map("patient_id") @db.Uuid
+  amount           Decimal       @db.Decimal(10, 2)
+  currency         String        @default("INR") @db.VarChar(10)
+  status           PaymentStatus @default(PENDING)
+  paymentSessionId String?       @map("payment_session_id") @db.VarChar(255)
+  gatewayOrderId   String?       @map("gateway_order_id") @db.VarChar(255)
+  createdAt        DateTime      @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt        DateTime      @updatedAt @map("updated_at") @db.Timestamptz
+
+  appointment Appointment @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+  patient     User        @relation(fields: [patientId], references: [id], onDelete: Restrict)
+
+  @@index([patientId])
+  @@index([status])
+  @@map("payments")
+}
+
+// ------------------------------------------------------------
+// 16. MedicalRecord — Patient uploaded medical reports
+// ------------------------------------------------------------
+model MedicalRecord {
+  id        String    @id @default(uuid()) @db.Uuid
+  userId    String    @map("user_id") @db.Uuid
+  name      String    @db.VarChar(200)
+  fileUrl   String    @map("file_url") @db.VarChar(500)
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+
+  user User @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@index([userId])
+  @@map("medical_records")
+}
