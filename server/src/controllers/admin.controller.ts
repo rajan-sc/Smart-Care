@@ -55,7 +55,7 @@ export const AdminController = {
     const ua = req.headers['user-agent'];
     const userAgent = Array.isArray(ua) ? ua[0] : (ua || '');
 
-    const user = await AdminService.softDeleteUser(userId, adminId, ipAddress, userAgent);
+    const user = await AdminService.softDeleteUser(userId, adminId, ipAddress, userAgent as string);
     return ApiResponse.ok(res, user);
   },
 

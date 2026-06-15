@@ -145,6 +145,7 @@ export const AppointmentService = {
   async cancelAppointment(appointmentId: string, userId: string, role: string) {
     const appointment = await prisma.appointment.findUnique({
       where: { id: appointmentId },
+      include: { patient: true, doctor: true },
     });
 
     if (!appointment) throw AppError.notFound('Appointment not found');

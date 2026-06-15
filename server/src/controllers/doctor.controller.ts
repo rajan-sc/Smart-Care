@@ -33,17 +33,17 @@ export const DoctorController = {
   },
 
   async getPatientVitals(req: Request, res: Response) {
-    const vitals = await DoctorService.getPatientVitals(req.user!.id, req.params.patientId);
+    const vitals = await DoctorService.getPatientVitals(req.user!.id, req.params.patientId as string);
     res.json({ success: true, data: vitals });
   },
 
   async getPatientMedications(req: Request, res: Response) {
-    const meds = await DoctorService.getPatientMedications(req.user!.id, req.params.patientId);
+    const meds = await DoctorService.getPatientMedications(req.user!.id, req.params.patientId as string);
     res.json({ success: true, data: meds });
   },
 
   async getPatientRecords(req: Request, res: Response) {
-    const records = await DoctorService.getPatientRecords(req.user!.id, req.params.patientId);
+    const records = await DoctorService.getPatientRecords(req.user!.id, req.params.patientId as string);
     res.json({ success: true, data: records });
   },
 };
