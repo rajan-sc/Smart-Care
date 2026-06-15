@@ -162,8 +162,16 @@ export const adminApi = {
   updateUserRole: (id: string, role: string) =>
     api.patch<{ success: boolean; data: any }>(`/admin/users/${id}/role`, { role }),
 
-  getAuditLogs: (page = 1, limit = 10) => {
+  verifyDoctor: (id: string, status: boolean, notes?: string) =>
+    api.patch<{ success: boolean; data: any }>(`/admin/users/${id}/verify`, { status, notes }),
+
+  deleteUser: (id: string) =>
+    api.delete<{ success: boolean; data: any }>(`/admin/users/${id}`),
+
+  getAuditLogs: (page = 1, limit = 10, entity?: string, action?: string) => {
     const params = new URLSearchParams({ page: String(page), limit: String(limit) });
+    if (entity) params.append('entity', entity);
+    if (action) params.append('action', action);
     return api.get<{ success: boolean; data: any }>(`/admin/audit-logs?${params.toString()}`);
   },
 };

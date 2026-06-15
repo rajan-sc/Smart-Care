@@ -61,7 +61,7 @@ export const PaymentStatusPage: React.FC = () => {
                 </div>
                 <h2 className="text-ease-subheading font-display tracking-tight text-forest-ink mb-3">Payment Successful!</h2>
                 <p className="text-ease-body-sm text-charcoal mb-10 px-4">{message}</p>
-                <Link to="/patient/appointments" className="btn-primary w-full py-4 text-center">
+                <Link to="/appointments" className="btn-primary w-full py-4 text-center">
                   View My Appointments
                 </Link>
               </div>
@@ -80,7 +80,7 @@ export const PaymentStatusPage: React.FC = () => {
                 <p className="text-ease-body-sm text-charcoal mb-10 px-4">{message}</p>
                 
                 <div className="w-full space-y-4">
-                  <Link to="/patient/appointments" className="btn-primary w-full py-4 text-center">
+                  <Link to="/appointments" className="btn-primary w-full py-4 text-center">
                     Return to Appointments
                   </Link>
                   <button 

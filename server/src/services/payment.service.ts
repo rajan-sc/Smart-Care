@@ -5,10 +5,14 @@ import prisma from '../lib/prisma.js';
 import { AppError } from '../utils/apiError.js';
 
 let isCashfreeConfigured = false;
+let cashfreeInstance: any = null;
+
 if (env.CASHFREE_CLIENT_ID && env.CASHFREE_CLIENT_SECRET) {
-  (Cashfree as any).XClientId = env.CASHFREE_CLIENT_ID;
-  (Cashfree as any).XClientSecret = env.CASHFREE_CLIENT_SECRET;
-  (Cashfree as any).XEnvironment = CFEnvironment.SANDBOX;
+  cashfreeInstance = new (Cashfree as any)(
+    CFEnvironment.SANDBOX,
+    env.CASHFREE_CLIENT_ID,
+    env.CASHFREE_CLIENT_SECRET
+  );
   isCashfreeConfigured = true;
 }
 
@@ -76,11 +80,11 @@ export const PaymentService = {
           customer_email: appointment.patient.email,
         },
         order_meta: {
-          return_url: `${env.CORS_ORIGIN}/payment-status?order_id={order_id}`,
+          return_url: `${env.FRONTEND_URL}/payment-status?order_id={order_id}`,
         },
       };
 
-      const response = await (Cashfree as any).PGCreateOrder('2023-08-01', request);
+      const response = await cashfreeInstance.PGCreateOrder(request);
 
       await prisma.payment.update({
         where: { id: payment.id },
@@ -132,7 +136,7 @@ export const PaymentService = {
     }
 
     try {
-      const response = await (Cashfree as any).PGFetchOrder('2023-08-01', gatewayOrderId);
+      const response = await cashfreeInstance.PGFetchOrder(gatewayOrderId);
       
       const statusStr = response.data.order_status; // "PAID", "ACTIVE", "EXPIRED", "FAILED"
       let newStatus = payment.status;

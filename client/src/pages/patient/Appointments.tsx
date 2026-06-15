@@ -14,9 +14,6 @@ import { bookAppointmentSchema, type BookAppointmentInput } from '../../validato
 import { socketService } from '../../services/socket';
 
 let cashfree: any;
-load({ mode: 'sandbox' }).then((cf) => {
-  cashfree = cf;
-});
 
 const AddAppointmentForm: React.FC<{ onSuccess: () => void; onCancel: () => void }> = ({ onSuccess, onCancel }) => {
   const queryClient = useQueryClient();
@@ -187,13 +184,21 @@ const AppointmentLists: React.FC = () => {
 
   const handlePayment = async (appointmentId: string) => {
     try {
+      let cf = cashfree;
+      if (!cf) {
+        cf = await load({ mode: 'sandbox' });
+        cashfree = cf;
+      }
+
       const res = await api.post('/payments/orders', { appointmentId });
       const { paymentSessionId } = res.data.data;
-      if (!cashfree) {
-        showToast('Payment gateway is loading. Please try again in a moment.', 'error');
+      
+      if (!paymentSessionId || paymentSessionId.startsWith('session_simulated')) {
+        showToast('Payment Failed: Gateway keys not configured.', 'error');
         return;
       }
-      cashfree.checkout({ paymentSessionId, redirectTarget: "_self" });
+
+      cf.checkout({ paymentSessionId, redirectTarget: "_self" });
     } catch (err: any) {
       showToast(err.response?.data?.error?.message || 'Failed to initiate payment.', 'error');
     }
