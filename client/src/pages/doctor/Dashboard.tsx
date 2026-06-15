@@ -191,13 +191,9 @@ const DoctorDashboardPage: React.FC = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [calledTokenId, setCalledTokenId] = useState<string | null>(null);
-  const [isConnected, setIsConnected] = useState(false);
-
-  const { on, off, socket } = useSocket({ namespace: '/' });
+  const { on, off } = useSocket({ namespace: '/' });
 
   useEffect(() => {
-    const onConnect    = () => setIsConnected(true);
-    const onDisconnect = () => setIsConnected(false);
     const handleQueueUpdate = (data: unknown) => {
       const update = data as { calledTokenId?: string };
       if (update?.calledTokenId) {
@@ -206,17 +202,11 @@ const DoctorDashboardPage: React.FC = () => {
       }
       queryClient.invalidateQueries({ queryKey: ['doctor-queue'] });
     };
-    on('connect',      onConnect    as (...args: unknown[]) => void);
-    on('disconnect',   onDisconnect as (...args: unknown[]) => void);
     on('queue:update', handleQueueUpdate);
     return () => {
-      off('connect',      onConnect    as (...args: unknown[]) => void);
-      off('disconnect',   onDisconnect as (...args: unknown[]) => void);
       off('queue:update', handleQueueUpdate);
     };
   }, [on, off, queryClient]);
-
-  useEffect(() => { setIsConnected(socket?.connected ?? false); }, [socket]);
 
   return (
     <AppShell>

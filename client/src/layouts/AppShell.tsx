@@ -106,106 +106,11 @@ const PatientSidebar: React.FC<PatientSidebarProps> = ({ className = '', onNavCl
   );
 };
 
-// ─── DOCTOR COMMAND RAIL — 56px icon-only, flat minimal style ─────────────────────
-interface DoctorRailProps { onNavClick?: () => void; }
-
-const DoctorRail: React.FC<DoctorRailProps> = ({ onNavClick }) => {
-  const { user, logout } = useAuth();
-  const navigate = useNavigate();
-
-  const handleLogout = async () => { await logout(); navigate('/login'); };
-
-  return (
-    <aside className="flex flex-col items-center w-14 h-screen sticky top-0 overflow-y-auto overflow-x-hidden py-4 gap-1 flex-shrink-0 bg-linen-white border-r border-hairline-gray">
-      {/* Logo mark */}
-      <div className="mb-4">
-        <LogoMark size="sm" />
-      </div>
-
-      {/* Divider */}
-      <div className="w-6 h-px mb-2 bg-hairline-gray" />
-
-      {/* Nav icons */}
-      <nav className="flex flex-col items-center gap-1 flex-1">
-        {doctorNav.map((item) => (
-          <NavLink key={item.to} to={item.to}
-            end={item.to === '/doctor/dashboard'}
-            onClick={onNavClick}
-            className={({ isActive }) => isActive 
-              ? 'relative flex items-center justify-center w-11 h-11 rounded-nav bg-mist-blue text-forest-ink' 
-              : 'relative flex items-center justify-center w-11 h-11 rounded-nav text-charcoal hover:bg-mint-veil transition-colors'
-            }
-            title={item.label}
-          >
-            <Icon path={item.icon} />
-          </NavLink>
-        ))}
-      </nav>
-
-      {/* Bottom: avatar + logout */}
-      <div className="flex flex-col items-center gap-2 mt-2">
-        <div className="w-8 h-8 rounded-full bg-mint-veil flex items-center justify-center text-forest-ink font-semibold text-xs cursor-default"
-          title={`${user?.firstName} ${user?.lastName}`}>
-          {user?.firstName?.[0]}{user?.lastName?.[0]}
-        </div>
-        <button onClick={handleLogout}
-          className="flex items-center justify-center w-11 h-11 rounded-nav text-danger-600 hover:bg-danger-50 transition-colors"
-          title="Sign out">
-          <Icon path="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-        </button>
-      </div>
-    </aside>
-  );
-};
-
-// ─── DOCTOR TOP BAR — clean light strip ─────────────────────────────
-interface DoctorTopBarProps { isMobileMenuOpen: boolean; onMenuOpen: () => void; }
-
-const DoctorTopBar: React.FC<DoctorTopBarProps> = ({ isMobileMenuOpen: _, onMenuOpen }) => {
-  const { user } = useAuth();
-  const [time, setTime] = React.useState(new Date());
-
-  React.useEffect(() => {
-    const t = setInterval(() => setTime(new Date()), 1000);
-    return () => clearInterval(t);
-  }, []);
-
-  const hh = time.getHours().toString().padStart(2, '0');
-  const mm = time.getMinutes().toString().padStart(2, '0');
-  const ss = time.getSeconds().toString().padStart(2, '0');
-
-  return (
-    <header className="flex items-center justify-between h-11 px-4 flex-shrink-0 bg-linen-white border-b border-hairline-gray">
-      {/* Left — mobile hamburger (hidden on lg) */}
-      <button onClick={onMenuOpen}
-        className="lg:hidden p-2 text-charcoal hover:text-forest-ink mr-2"
-        aria-label="Open menu">
-        <Icon path="M4 6h16M4 12h16M4 18h16" />
-      </button>
-
-      {/* Center — breadcrumb / context */}
-      <div className="flex-1" />
-
-      {/* Right — live clock + user */}
-      <div className="flex items-center gap-4">
-        <span className="font-mono text-sm tracking-tight text-charcoal hidden sm:block">
-          {hh}:{mm}:{ss}
-        </span>
-        <div className="h-4 w-px bg-hairline-gray" />
-        <span className="text-xs text-charcoal">
-          Dr. {user?.lastName}
-        </span>
-      </div>
-    </header>
-  );
-};
-
 // ─── APP SHELL ────────────────────────────────────────────────────────────────
 export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
-  const isDoctor = user?.role === 'DOCTOR';
 
   const handleLogout = async () => { await logout(); navigate('/login'); };
 

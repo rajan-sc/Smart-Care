@@ -106,26 +106,6 @@ const PatientCard: React.FC<{
   );
 };
 
-// ─── Notification Toast ────────────────────────────────────────────────────────
-const AlertToast: React.FC<{ notification: Notification; onDismiss: () => void }> = ({
-  notification, onDismiss
-}) => (
-  <div className="fixed bottom-8 right-8 max-w-sm w-full bg-white rounded-2xl border border-danger-200 shadow-2xl shadow-danger-500/20 p-5 animate-slide-up z-50">
-    <div className="flex items-start gap-4">
-      <div className="w-10 h-10 rounded-xl bg-danger-100 flex items-center justify-center flex-shrink-0 text-xl shadow-inner">
-        🚨
-      </div>
-      <div className="flex-1 min-w-0 pt-0.5">
-        <p className="font-bold text-slate-800 text-sm tracking-tight">{notification.title}</p>
-        <p className="text-xs font-medium text-slate-600 mt-1 leading-relaxed">{notification.message}</p>
-      </div>
-      <button onClick={onDismiss} className="text-slate-400 hover:text-slate-600 transition-colors p-1 bg-slate-50 hover:bg-slate-100 rounded-lg">
-        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
-      </button>
-    </div>
-  </div>
-);
-
 // ─── Data Components ──────────────────────────────────────────────────────────
 
 const PatientGrid: React.FC<{ 
@@ -250,20 +230,11 @@ const PatientGrid: React.FC<{
 // ─── Caregiver Dashboard ──────────────────────────────────────────────────────
 const CaregiverDashboardPage: React.FC = () => {
   const [alerts, setAlerts]         = useState<Map<string, PatientAlert>>(new Map());
-  const [isConnected, setIsConnected] = useState(false);
   const { showToast } = useToast();
-
   // ── Socket ───────────────────────────────────────────────────────────────────
-  const { on, off, socket } = useSocket({ namespace: '/' });
+  const { on, off } = useSocket({ namespace: '/' });
 
   useEffect(() => {
-    setIsConnected(socket?.connected ?? false);
-  }, [socket]);
-
-  useEffect(() => {
-    const onConnect    = () => setIsConnected(true);
-    const onDisconnect = () => setIsConnected(false);
-
     const handleNotification = (data: unknown) => {
       const notif = data as Notification;
       if (notif.type === 'CAREGIVER_ALERT' || notif.type === 'VITAL_ALERT') {
@@ -285,13 +256,9 @@ const CaregiverDashboardPage: React.FC = () => {
       }
     };
 
-    on('connect',          onConnect    as (...args: unknown[]) => void);
-    on('disconnect',       onDisconnect as (...args: unknown[]) => void);
     on('notification:new', handleNotification);
 
     return () => {
-      off('connect',          onConnect    as (...args: unknown[]) => void);
-      off('disconnect',       onDisconnect as (...args: unknown[]) => void);
       off('notification:new', handleNotification);
     };
   }, [on, off]);

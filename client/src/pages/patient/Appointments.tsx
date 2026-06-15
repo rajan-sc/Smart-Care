@@ -430,7 +430,6 @@ const LiveTracker: React.FC<{ appointment: any }> = ({ appointment }) => {
     }
 
     const nodes = [];
-    const displayCount = Math.min(tokensAhead, 5); 
     const hasMore = tokensAhead > 5;
     
     nodes.push(

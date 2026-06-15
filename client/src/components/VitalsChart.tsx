@@ -5,7 +5,6 @@ import {
   Title, Tooltip, Legend, Filler
 } from 'chart.js';
 import type { ScriptableContext } from 'chart.js';
-// @ts-expect-error Type issues with verbatimModuleSyntax
 import { Line } from 'react-chartjs-2';
 import { format, parseISO } from 'date-fns';
 import type { Vital } from '../types/api';

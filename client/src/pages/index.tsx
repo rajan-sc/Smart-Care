@@ -18,7 +18,7 @@ export { PaymentStatusPage } from './patient/PaymentStatus';
 // ── Doctor Pages ──────────────────────────────────────────────────────────────
 export { DoctorSchedule } from './doctor/Schedule';
 export { DoctorQueue } from './doctor/Queue';
-export { DoctorPatients } from './doctor/Patients';
+export { default as DoctorPatients } from './doctor/Patients';
 
 // ── Caregiver Pages ───────────────────────────────────────────────────────────
 export { PatientDetail as CaregiverPatientDetail } from './caregiver/PatientDetail';

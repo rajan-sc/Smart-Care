@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, ReactNode, useCallback } from 'react';
+import React, { createContext, useContext, useState, useCallback, type ReactNode } from 'react';
 
 interface ConfirmOptions {
   title: string;
