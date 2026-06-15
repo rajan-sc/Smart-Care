@@ -104,8 +104,8 @@ export const doctorApi = {
   getQueue: () =>
     api.get<{ success: boolean; data: QueueToken[] }>('/queue'),
 
-  advanceQueue: (action: 'CALL_NEXT' | 'COMPLETE_AND_CALL_NEXT' | 'SKIP_CURRENT') =>
-    api.post<{ success: boolean; data: any }>('/queue/advance', { action }),
+  advanceQueue: (action: 'CALL_NEXT' | 'COMPLETE_AND_CALL_NEXT' | 'SKIP_CURRENT' | 'COMPLETE_CURRENT') =>
+    api.post<{ success: boolean; data: any }>('/queue/next', { action }),
 
   getPatients: () =>
     api.get<{ success: boolean; data: any[] }>('/doctors/me/patients'),
