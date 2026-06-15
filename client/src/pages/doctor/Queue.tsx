@@ -20,7 +20,7 @@ const QueueRow: React.FC<{
 }> = ({ token, isActive, isNew, position }) => {
   const s = STATUS_MAP[token.status] ?? { label: token.status, cls: 'badge-pill bg-linen text-charcoal' };
   return (
-    <div className={`flex items-center gap-ease-14 px-ease-21 py-ease-14 transition-all duration-300 border-b border-hairline-gray
+    <div className={`flex items-center gap-3 px-4 py-3 transition-all duration-300 border-b border-hairline-gray
       ${isNew    ? 'bg-mint-veil/50' :
         isActive ? 'bg-mist-blue/20' :
                    'hover:bg-linen'}
@@ -165,8 +165,8 @@ export const DoctorQueue: React.FC = () => {
       <div className="flex h-[calc(100vh-44px)] animate-fade-in bg-linen-white">
         
         {/* LEFT PANEL: Queue list */}
-        <div className="flex flex-col w-full lg:w-80 xl:w-[400px] flex-shrink-0 bg-linen-white border-r border-hairline-gray relative z-10">
-          <div className="px-ease-21 py-ease-21 flex flex-col items-start border-b border-hairline-gray">
+        <div className="flex flex-col w-full lg:w-72 xl:w-80 flex-shrink-0 bg-linen-white border-r border-hairline-gray relative z-10">
+          <div className="px-4 py-4 flex flex-col items-start border-b border-hairline-gray">
             <p className="text-ease-caption text-charcoal">
               <span className="font-mono">{waitingPatients.length}</span> waiting · 
               <span className="font-mono ml-1">{completedToday}</span> done
@@ -191,12 +191,12 @@ export const DoctorQueue: React.FC = () => {
             )}
           </div>
           
-          <div className="p-ease-21 bg-linen-white border-t border-hairline-gray">
+          <div className="p-4 bg-linen-white border-t border-hairline-gray">
             <button
               id="advance-queue-btn"
               onClick={() => nextMutation.mutate('CALL_NEXT')}
               disabled={nextMutation.isPending || waitingPatients.length === 0 || !!activeToken}
-              className="w-full btn-primary disabled:opacity-40 flex justify-between items-center"
+              className="w-full btn-primary disabled:opacity-40 flex justify-between items-center text-sm py-2 px-3"
             >
               <span>
                 {nextMutation.isPending ? 'Calling...' : 'Call next patient'}
@@ -210,17 +210,19 @@ export const DoctorQueue: React.FC = () => {
         <div className="hidden lg:flex flex-col flex-1 overflow-hidden bg-linen-white relative">
           {activeToken ? (
             <>
-              <div className="px-10 pt-10 pb-8 flex-shrink-0 relative z-10 border-b border-hairline-gray">
-                <div className="flex items-start justify-between mb-ease-14">
+              <div className="px-6 pt-5 pb-3 flex-shrink-0 relative z-10 border-b border-hairline-gray">
+                <div className="flex items-start justify-between">
                   <div>
-                    <div className="font-mono font-normal tracking-tight" style={{ fontSize: '5rem', color: '#0f3e17', lineHeight: 1 }}>
-                      #{String(activeToken.tokenNumber).padStart(2, '0')}
+                    <div className="flex items-baseline gap-4">
+                      <div className="font-mono font-normal tracking-tight" style={{ fontSize: '3rem', color: '#0f3e17', lineHeight: 1 }}>
+                        #{String(activeToken.tokenNumber).padStart(2, '0')}
+                      </div>
+                      <h1 className="text-3xl font-display tracking-tight text-forest-ink">
+                        {activeToken.patient?.firstName} {activeToken.patient?.lastName}
+                      </h1>
                     </div>
-                    <h1 className="text-ease-display font-display tracking-tight text-forest-ink mt-ease-14">
-                      {activeToken.patient?.firstName} {activeToken.patient?.lastName}
-                    </h1>
                     {activeToken.appointment?.reason && (
-                      <p className="text-ease-body-sm text-charcoal mt-ease-7 bg-mist-blue/20 inline-block px-ease-14 py-ease-7 rounded-badges">
+                      <p className="text-sm text-charcoal mt-2 bg-mist-blue/20 inline-block px-3 py-1.5 rounded-badges">
                         {activeToken.appointment.reason}
                       </p>
                     )}
@@ -230,54 +232,54 @@ export const DoctorQueue: React.FC = () => {
                   </span>
                 </div>
                 
-                <div className="flex items-center gap-ease-14 mt-ease-21">
+                <div className="flex items-center gap-3 mt-3">
                   {activeToken.calledAt && (
-                    <span className="text-ease-caption text-charcoal font-mono bg-linen px-ease-7 py-ease-4 rounded-badges">
+                    <span className="text-xs text-charcoal font-mono bg-linen px-2 py-1 rounded-badges">
                       Called {new Date(activeToken.calledAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
                     </span>
                   )}
                   {activeToken.appointment?.type === 'TELECONSULT' && activeToken.appointment?.meetingUrl && (
-                    <a href={activeToken.appointment.meetingUrl} target="_blank" rel="noreferrer" className="badge-pill bg-mint-veil text-forest-ink hover:bg-sage-wash transition-colors">
+                    <a href={activeToken.appointment.meetingUrl} target="_blank" rel="noreferrer" className="text-xs bg-mint-veil text-forest-ink px-3 py-1 rounded-badges hover:bg-sage-wash transition-colors">
                       Join Video Call
                     </a>
                   )}
                 </div>
               </div>
               
-              <div className="flex-1 overflow-y-auto px-10 py-8 relative z-10 custom-scrollbar">
-                <div className="max-w-3xl space-y-ease-28">
-                  <div className="card border border-hairline-gray">
-                    <label className="label uppercase tracking-tight text-ease-caption font-bold">
+              <div className="flex-1 overflow-y-auto px-6 py-6 relative z-10 custom-scrollbar">
+                <div className="max-w-3xl space-y-ease-14">
+                  <div className="card p-4 border border-hairline-gray">
+                    <label className="label uppercase tracking-tight text-ease-caption font-bold mb-2 block">
                       Clinical Notes
                     </label>
                     <textarea
                       ref={notesRef}
                       value={clinicalNotes}
                       onChange={(e) => setClinicalNotes(e.target.value)}
-                      className="input w-full min-h-[140px]"
+                      className="input w-full min-h-[80px]"
                       placeholder="Chief complaint, examination findings, diagnosis…"
                     />
                   </div>
                   
-                  <div className="card border border-hairline-gray">
-                    <label className="label uppercase tracking-tight text-ease-caption font-bold mb-3 block">
+                  <div className="card p-4 border border-hairline-gray">
+                    <label className="label uppercase tracking-tight text-ease-caption font-bold mb-2 block">
                       E-Prescription
                     </label>
                     {medicines.length > 0 && (
-                      <div className="mb-4 space-y-2">
+                      <div className="mb-3 space-y-2">
                         {medicines.map((m, idx) => (
-                          <div key={idx} className="flex items-center justify-between p-3 bg-linen rounded-cards border border-hairline-gray">
+                          <div key={idx} className="flex items-center justify-between p-2 bg-linen rounded-cards border border-hairline-gray">
                             <div>
-                              <p className="text-ease-body-sm font-semibold text-forest-ink">{m.name} {m.dosage}{m.unit}</p>
-                              <p className="text-ease-caption text-charcoal">{m.frequency} × {m.durationDays} days | {m.instructions}</p>
+                              <p className="text-sm font-semibold text-forest-ink">{m.name} {m.dosage}{m.unit}</p>
+                              <p className="text-[11px] text-charcoal">{m.frequency} × {m.durationDays} days | {m.instructions}</p>
                             </div>
-                            <button onClick={() => setMedicines(prev => prev.filter((_, i) => i !== idx))} className="text-danger-700 hover:text-danger-900 text-sm">Remove</button>
+                            <button onClick={() => setMedicines(prev => prev.filter((_, i) => i !== idx))} className="text-danger-700 hover:text-danger-900 text-xs font-semibold">Remove</button>
                           </div>
                         ))}
                       </div>
                     )}
                     
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-mist-blue/10 p-4 rounded-cards border border-hairline-gray">
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 bg-mist-blue/10 p-3 rounded-cards border border-hairline-gray">
                       <div className="col-span-2">
                         <label className="text-ease-caption text-charcoal block mb-1">Medicine Name</label>
                         <input type="text" className="input w-full text-sm py-1.5" placeholder="e.g. Paracetamol" value={newMed.name || ''} onChange={e => setNewMed({...newMed, name: e.target.value})} />
@@ -364,11 +366,11 @@ export const DoctorQueue: React.FC = () => {
                   {saveSuccess && <div className="p-3 bg-mint-veil/50 text-forest-ink border border-mint-veil rounded-cards text-sm">{saveSuccess}</div>}
                   {saveError && <div className="p-3 bg-danger-50 text-danger-700 border border-danger-100 rounded-cards text-sm">{saveError}</div>}
                   
-                  <div className="flex flex-col sm:flex-row gap-ease-14">
+                  <div className="flex flex-col sm:flex-row gap-3 mt-4">
                     <button
                       onClick={() => notesMutation.mutate({ appointmentId: activeToken.appointmentId, clinicalNotes, medicines })}
                       disabled={notesMutation.isPending}
-                      className="flex-1 px-ease-21 py-ease-14 rounded-buttons border border-forest-ink text-forest-ink hover:bg-mist-blue/20 transition-colors font-semibold text-ease-body-sm disabled:opacity-50"
+                      className="flex-1 px-4 py-3 rounded-buttons border border-forest-ink text-forest-ink hover:bg-mist-blue/20 transition-colors font-semibold text-sm disabled:opacity-50"
                     >
                       {notesMutation.isPending ? 'Saving...' : 'Save Notes & Rx'}
                     </button>
@@ -377,7 +379,7 @@ export const DoctorQueue: React.FC = () => {
                         href={generatedRxUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex-1 px-ease-21 py-ease-14 flex items-center justify-center rounded-buttons bg-forest-ink text-linen-white hover:bg-forest-ink/90 transition-colors font-semibold text-ease-body-sm"
+                        className="flex-1 px-4 py-3 flex items-center justify-center rounded-buttons bg-forest-ink text-linen-white hover:bg-forest-ink/90 transition-colors font-semibold text-sm"
                       >
                         Download Rx PDF
                       </a>
@@ -385,16 +387,16 @@ export const DoctorQueue: React.FC = () => {
                     <button
                       onClick={() => nextMutation.mutate('COMPLETE_AND_CALL_NEXT')}
                       disabled={nextMutation.isPending}
-                      className="flex-1 btn-primary disabled:opacity-50"
+                      className="flex-1 px-4 py-3 rounded-buttons bg-forest-ink text-linen-white font-semibold text-sm disabled:opacity-50"
                     >
                       {nextMutation.isPending ? 'Processing...' : 'Complete & Call Next'}
                     </button>
                   </div>
-                  <div className="flex justify-end border-t border-hairline-gray pt-ease-14">
+                  <div className="flex justify-end border-t border-hairline-gray pt-3">
                     <button
                       onClick={() => nextMutation.mutate('SKIP_CURRENT')}
                       disabled={nextMutation.isPending}
-                      className="text-ease-caption text-danger-700 hover:text-danger-900 border border-hairline-gray px-4 py-2 rounded-nav transition-colors"
+                      className="text-xs text-danger-700 hover:text-danger-900 border border-hairline-gray px-3 py-1.5 rounded-nav transition-colors"
                     >
                       Skip Patient (No Show)
                     </button>
