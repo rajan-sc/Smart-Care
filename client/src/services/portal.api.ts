@@ -56,6 +56,9 @@ export const patientApi = {
   getAppointments: () =>
     api.get<{ success: boolean; data: Appointment[] }>('/appointments/me'),
 
+  getLiveQueue: (doctorId: string) =>
+    api.get<{ success: boolean; data: { activeToken: number | null; totalWaiting: number; estimatedWaitMinutes: number; avgMinutes: number } }>(`/queue/live/${doctorId}`),
+
   getDoctors: () =>
     api.get<{ success: boolean; data: any[] }>('/doctors'),
 

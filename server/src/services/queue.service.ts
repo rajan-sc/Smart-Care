@@ -38,6 +38,7 @@ export const QueueService = {
       activeToken: activeToken ? activeToken.tokenNumber : null,
       totalWaiting: waitingTokens.length,
       estimatedWaitMinutes: tokensAhead * avgMinutes,
+      avgMinutes,
     };
   },
 

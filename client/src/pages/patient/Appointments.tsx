@@ -11,6 +11,7 @@ import jsPDF from 'jspdf';
 import { useToast } from '../../components/ToastProvider';
 import { useConfirm } from '../../components/ConfirmProvider';
 import { bookAppointmentSchema, type BookAppointmentInput } from '../../validators';
+import { socketService } from '../../services/socket';
 
 let cashfree: any;
 load({ mode: 'sandbox' }).then((cf) => {
@@ -355,8 +356,184 @@ const AppointmentLists: React.FC = () => {
   );
 };
 
+const LiveTracker: React.FC<{ appointment: any }> = ({ appointment }) => {
+  const doctorId = appointment.doctorId;
+  const myTokenNumber = appointment.tokenNumber;
+
+  const { data: initialQueue, isLoading } = useQuery({
+    queryKey: ['liveQueue', doctorId],
+    queryFn: () => patientApi.getLiveQueue(doctorId).then((r) => r.data.data),
+    refetchInterval: false,
+  });
+
+  const [liveQueue, setLiveQueue] = useState<any>(null);
+
+  React.useEffect(() => {
+    if (initialQueue) setLiveQueue(initialQueue);
+  }, [initialQueue]);
+
+  React.useEffect(() => {
+    const socket = socketService.getQueueSocket();
+    if (!socket) return;
+    
+    socket.emit('join_queue', doctorId);
+    
+    const handleUpdate = (data: any) => setLiveQueue(data);
+    socket.on('queue:update', handleUpdate);
+    
+    return () => {
+      socket.emit('leave_queue', doctorId);
+      socket.off('queue:update', handleUpdate);
+    };
+  }, [doctorId]);
+
+  if (isLoading || !liveQueue) {
+    return <div className="skeleton h-[400px] rounded-cards w-full max-w-lg mx-auto" />;
+  }
+
+  const activeToken = liveQueue.activeToken;
+  const avgMinutes = liveQueue.avgMinutes || 15;
+  
+  let tokensAhead = 0;
+  if (activeToken === null) {
+    tokensAhead = myTokenNumber - 1;
+  } else if (myTokenNumber >= activeToken) {
+    tokensAhead = myTokenNumber - activeToken;
+  } else {
+    tokensAhead = 0;
+  }
+
+  const waitMinutes = tokensAhead * avgMinutes;
+  const isMyTurn = myTokenNumber === activeToken;
+  const isPast = myTokenNumber < activeToken && activeToken !== null;
+
+  const renderLineage = () => {
+    if (isPast) {
+      return <p className="text-center text-charcoal py-8 font-semibold">Your token has already been called.</p>;
+    }
+    
+    if (isMyTurn) {
+      return (
+        <div className="flex flex-col items-center py-10 animate-fade-in">
+          <div className="w-20 h-20 rounded-full bg-mint-veil/50 border-4 border-mint-veil flex items-center justify-center animate-pulse z-10 shadow-lg relative">
+            <span className="font-mono text-forest-ink text-3xl font-bold">{myTokenNumber}</span>
+          </div>
+          <span className="text-xl text-forest-ink mt-6 font-display font-bold">It's your turn!</span>
+          <span className="text-sm text-charcoal mt-2">Please head to the doctor's room.</span>
+        </div>
+      );
+    }
+
+    const nodes = [];
+    const displayCount = Math.min(tokensAhead, 5); 
+    const hasMore = tokensAhead > 5;
+    
+    nodes.push(
+      <div key="active" className="flex flex-col items-center">
+        <div className="w-14 h-14 rounded-full bg-mist-blue/20 border-2 border-mist-blue flex items-center justify-center z-10 relative shadow-sm">
+          <span className="font-mono text-forest-ink font-bold text-lg">{activeToken || '-'}</span>
+        </div>
+        <span className="text-xs text-charcoal mt-2 font-bold uppercase tracking-widest">Currently Serving</span>
+      </div>
+    );
+    
+    if (tokensAhead > 0) nodes.push(<div key="line-1" className="w-px h-10 bg-hairline-gray my-1" />);
+    
+    if (hasMore) {
+      nodes.push(
+        <div key="more" className="flex flex-col items-center my-3 text-hairline-gray">
+          <span className="text-xs font-mono">• • •</span>
+          <span className="text-[10px] font-bold text-charcoal mt-1 uppercase tracking-wider">{tokensAhead - 1} patients between</span>
+        </div>
+      );
+      nodes.push(<div key="line-more" className="w-px h-10 bg-hairline-gray my-1" />);
+    } else {
+      for (let i = 1; i < tokensAhead; i++) {
+        nodes.push(
+          <div key={`node-${i}`} className="flex flex-col items-center">
+            <div className="w-8 h-8 rounded-full bg-linen border border-hairline-gray flex items-center justify-center z-10">
+              <span className="font-mono text-[10px] text-charcoal">{activeToken ? activeToken + i : i}</span>
+            </div>
+          </div>
+        );
+        nodes.push(<div key={`line-${i}`} className="w-px h-10 bg-hairline-gray my-1" />);
+      }
+    }
+    
+    if (tokensAhead > 0) {
+      nodes.push(
+        <div key="user" className="flex flex-col items-center mt-2">
+          <div className="w-16 h-16 rounded-full bg-forest-ink border-4 border-mist-blue flex items-center justify-center z-10 shadow-lg">
+            <span className="font-mono text-linen-white text-2xl font-bold">{myTokenNumber}</span>
+          </div>
+          <span className="text-sm text-forest-ink mt-3 font-bold tracking-tight uppercase">Your Token</span>
+        </div>
+      );
+    }
+    
+    return <div className="flex flex-col items-center justify-center py-8">{nodes}</div>;
+  };
+
+  return (
+    <div className="max-w-lg mx-auto w-full animate-slide-up">
+      <div className="bg-linen-white rounded-cards border border-hairline-gray overflow-hidden shadow-sm">
+        
+        {/* Header */}
+        <div className="p-6 border-b border-hairline-gray text-center bg-linen">
+          <h2 className="text-ease-subheading font-display tracking-tight text-forest-ink mb-4">Live Queue Status</h2>
+          <div className="flex items-center justify-center gap-12">
+            <div className="text-center">
+              <p className="text-[10px] text-charcoal font-bold uppercase tracking-widest mb-1">Estimated Wait</p>
+              <p className="font-mono text-3xl text-forest-ink">{isMyTurn || isPast ? '-' : `~${waitMinutes}m`}</p>
+            </div>
+            <div className="w-px h-10 bg-hairline-gray"></div>
+            <div className="text-center">
+              <p className="text-[10px] text-charcoal font-bold uppercase tracking-widest mb-1">Ahead of You</p>
+              <p className="font-mono text-3xl text-forest-ink">{isMyTurn || isPast ? '-' : tokensAhead}</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Lineage Visualization */}
+        <div className="p-8 bg-white relative">
+          {renderLineage()}
+        </div>
+
+        <div className="p-4 bg-linen text-center border-t border-hairline-gray">
+          <p className="text-xs text-charcoal">
+            Dr. {appointment.doctor?.firstName} {appointment.doctor?.lastName}
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export const AppointmentsPage: React.FC = () => {
   const [showAddForm, setShowAddForm] = useState(false);
+  const [activeTab, setActiveTab] = useState<'LIST' | 'TRACKER'>('LIST');
+
+  const { data: appointments } = useSuspenseQuery({
+    queryKey: ['appointments'],
+    queryFn: () => patientApi.getAppointments().then((r) => r.data.data),
+    staleTime: 60 * 1000,
+  });
+
+  // Find the earliest appointment today that is still pending or confirmed
+  const todayAppt = React.useMemo(() => {
+    if (!appointments) return null;
+    const todayStr = format(new Date(), 'yyyy-MM-dd');
+    return appointments.find(
+      (a: any) => ['PENDING', 'CONFIRMED'].includes(a.status) && a.scheduledDate.startsWith(todayStr)
+    );
+  }, [appointments]);
+
+  // Auto-switch to TRACKER tab if a valid appointment exists for today and we are not explicitly doing something else
+  React.useEffect(() => {
+    if (todayAppt) {
+      setActiveTab('TRACKER');
+    }
+  }, [todayAppt?.id]);
 
   return (
     <AppShell>
@@ -371,20 +548,51 @@ export const AppointmentsPage: React.FC = () => {
           </button>
         </div>
 
+        {todayAppt && !showAddForm && (
+          <div className="flex items-center gap-8 border-b border-hairline-gray mb-10 animate-fade-in">
+            <button 
+              className={`pb-3 font-semibold text-sm transition-colors relative ${activeTab === 'TRACKER' ? 'text-forest-ink' : 'text-charcoal hover:text-forest-ink'}`}
+              onClick={() => setActiveTab('TRACKER')}
+            >
+              <span className="flex items-center gap-2">
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-mint-veil opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-mint-veil"></span>
+                </span>
+                Live Tracker
+              </span>
+              {activeTab === 'TRACKER' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-forest-ink rounded-t-full"></div>}
+            </button>
+            <button 
+              className={`pb-3 font-semibold text-sm transition-colors relative ${activeTab === 'LIST' ? 'text-forest-ink' : 'text-charcoal hover:text-forest-ink'}`}
+              onClick={() => setActiveTab('LIST')}
+            >
+              My Appointments
+              {activeTab === 'LIST' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-forest-ink rounded-t-full"></div>}
+            </button>
+          </div>
+        )}
+
         {showAddForm && (
           <Suspense fallback={<div className="skeleton h-[400px] rounded-cards mb-ease-28" />}>
             <AddAppointmentForm onSuccess={() => setShowAddForm(false)} onCancel={() => setShowAddForm(false)} />
           </Suspense>
         )}
 
-        <Suspense fallback={
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-ease-section">
-            <div className="space-y-4">{[1,2].map(i => <div key={i} className="skeleton h-[200px] rounded-cards" />)}</div>
-            <div className="space-y-4">{[1,2].map(i => <div key={i} className="skeleton h-[120px] rounded-cards" />)}</div>
-          </div>
-        }>
-          <AppointmentLists />
-        </Suspense>
+        {!showAddForm && activeTab === 'TRACKER' && todayAppt && (
+          <LiveTracker appointment={todayAppt} />
+        )}
+
+        {!showAddForm && (activeTab === 'LIST' || !todayAppt) && (
+          <Suspense fallback={
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-ease-section">
+              <div className="space-y-4">{[1,2].map(i => <div key={i} className="skeleton h-[200px] rounded-cards" />)}</div>
+              <div className="space-y-4">{[1,2].map(i => <div key={i} className="skeleton h-[120px] rounded-cards" />)}</div>
+            </div>
+          }>
+            <AppointmentLists />
+          </Suspense>
+        )}
       </div>
     </AppShell>
   );
