@@ -27,3 +27,19 @@ export const queryAuditLogsSchema = z.object({
     action: z.string().optional(),
   }),
 });
+
+export const updateDoctorVerificationSchema = z.object({
+  body: z.object({
+    status: z.boolean(),
+    notes: z.string().optional(),
+  }),
+  params: z.object({
+    id: z.string().uuid('Invalid user ID'),
+  }),
+});
+
+export const deleteUserSchema = z.object({
+  params: z.object({
+    id: z.string().uuid('Invalid user ID'),
+  }),
+});

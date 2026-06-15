@@ -45,7 +45,18 @@ export const AdminController = {
   async updateDoctorVerification(req: Request, res: Response) {
     const { status, notes } = req.body;
     const doctor = await AdminService.updateDoctorVerification(req.params.id as string, status, notes);
-    res.json({ success: true, data: doctor });
+    return ApiResponse.ok(res, doctor);
+  },
+
+  async softDeleteUser(req: Request, res: Response) {
+    const userId = req.params.id;
+    const adminId = req.user!.id;
+    const ipAddress = typeof req.ip === 'string' ? req.ip : '';
+    const ua = req.headers['user-agent'];
+    const userAgent = Array.isArray(ua) ? ua[0] : (ua || '');
+
+    const user = await AdminService.softDeleteUser(userId, adminId, ipAddress, userAgent);
+    return ApiResponse.ok(res, user);
   },
 
   async getSystemAnalytics(req: Request, res: Response) {

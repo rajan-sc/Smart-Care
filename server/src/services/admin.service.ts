@@ -83,11 +83,40 @@ export const AdminService = {
   },
 
   async updateDoctorVerification(doctorId: string, isVerified: boolean, notes?: string) {
-    // Basic implementation for fixing the build. Adjust to match actual logic if needed.
     return prisma.user.update({
       where: { id: doctorId },
       data: { isVerified },
       select: { id: true, email: true, role: true, firstName: true, lastName: true, isVerified: true },
+    });
+  },
+
+  async softDeleteUser(userId: string, adminId: string, ipAddress?: string, userAgent?: string) {
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) throw AppError.notFound('User not found');
+    if (user.deletedAt) return user;
+
+    return prisma.$transaction(async (tx) => {
+      const updatedUser = await tx.user.update({
+        where: { id: userId },
+        data: { deletedAt: new Date(), isActive: false },
+        select: { id: true, email: true, role: true, firstName: true, lastName: true, deletedAt: true },
+      });
+
+      // Audit Log
+      await tx.auditLog.create({
+        data: {
+          userId: adminId,
+          action: 'SOFT_DELETE',
+          entity: 'User',
+          entityId: userId,
+          oldValues: { deletedAt: null, isActive: user.isActive },
+          newValues: { deletedAt: new Date(), isActive: false },
+          ipAddress,
+          userAgent,
+        },
+      });
+
+      return updatedUser;
     });
   },
 

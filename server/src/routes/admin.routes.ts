@@ -3,7 +3,7 @@ import { AdminController } from '../controllers/admin.controller.js';
 import { authenticate } from '../middleware/authenticate.js';
 import { authorize } from '../middleware/authorize.js';
 import { validate } from '../middleware/validate.js';
-import { queryUsersSchema, updateRoleSchema, queryAuditLogsSchema } from '../validators/admin.validator.js';
+import { queryUsersSchema, updateRoleSchema, queryAuditLogsSchema, updateDoctorVerificationSchema, deleteUserSchema } from '../validators/admin.validator.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { Role } from '@prisma/client';
 
@@ -32,6 +32,18 @@ router.get(
   '/audit-logs',
   validate(queryAuditLogsSchema),
   asyncHandler(AdminController.getAuditLogs)
+);
+
+router.delete(
+  '/users/:id',
+  validate(deleteUserSchema),
+  asyncHandler(AdminController.softDeleteUser)
+);
+
+router.patch(
+  '/users/:id/verify',
+  validate(updateDoctorVerificationSchema),
+  asyncHandler(AdminController.updateDoctorVerification)
 );
 
 export default router;
