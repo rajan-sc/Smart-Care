@@ -50,8 +50,8 @@ export const LandingPage: React.FC = () => {
       <header className="sticky top-0 z-50 bg-linen-white/90 backdrop-blur-md border-b border-hairline-gray">
         <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-nav bg-mist-blue flex items-center justify-center flex-shrink-0">
-              <svg className="w-4 h-4 text-forest-ink" viewBox="0 0 24 24" fill="none"
+            <div className="w-8 h-8 rounded-nav bg-forest-ink flex items-center justify-center flex-shrink-0">
+              <svg className="w-4 h-4 text-linen-white" viewBox="0 0 24 24" fill="none"
                 stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
                 <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
               </svg>
