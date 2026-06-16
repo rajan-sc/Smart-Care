@@ -32,9 +32,9 @@ export const DoctorsPage: React.FC = () => {
       {/* Simple Public Header */}
       <header className="bg-linen-white border-b border-hairline-gray sticky top-0 z-10 backdrop-blur-md">
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-2 text-forest-ink font-bold tracking-tight">
-            <div className="w-8 h-8 rounded-nav bg-mist-blue flex items-center justify-center flex-shrink-0">
-              <svg className="w-4 h-4 text-forest-ink" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+          <Link to="/" className="flex items-center gap-2.5 text-forest-ink font-bold tracking-tight">
+            <div className="w-8 h-8 rounded-nav bg-forest-ink flex items-center justify-center flex-shrink-0">
+              <svg className="w-4 h-4 text-linen-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
                 <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
               </svg>
             </div>

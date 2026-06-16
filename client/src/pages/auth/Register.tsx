@@ -37,14 +37,14 @@ export const RegisterPage: React.FC = () => {
       <div className="flex-1 flex flex-col justify-center px-4 sm:px-6 lg:px-20 xl:px-24 py-12 z-10 relative bg-linen-white border-r border-hairline-gray">
         <div className="mx-auto w-full max-w-md animate-fade-in">
           
-          <div className="flex items-center gap-3 mb-10">
-            <div className="w-10 h-10 rounded-cards bg-mist-blue flex items-center justify-center flex-shrink-0">
-              <svg className="w-6 h-6 text-forest-ink" viewBox="0 0 24 24" fill="none"
+          <div className="flex items-center gap-2.5 mb-10">
+            <div className="w-8 h-8 rounded-nav bg-forest-ink flex items-center justify-center flex-shrink-0">
+              <svg className="w-4 h-4 text-linen-white" viewBox="0 0 24 24" fill="none"
                 stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
                 <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
               </svg>
             </div>
-            <span className="text-xl font-bold text-forest-ink tracking-tight">Smart Care</span>
+            <span className="font-bold tracking-tight text-forest-ink">Smart Care</span>
           </div>
 
           <h2 className="text-ease-display font-display font-semibold text-forest-ink mb-2 tracking-tight">Create an account</h2>

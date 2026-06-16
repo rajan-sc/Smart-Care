@@ -38,7 +38,7 @@ const caregiverNav: NavItem[] = [
 
 // ─── Shared logo mark ─────────────────────────────────────────────────────────
 const LogoMark = ({ size = 'md' }: { size?: 'sm' | 'md' }) => (
-  <div className={`${size === 'sm' ? 'w-8 h-8' : 'w-8 h-8'} rounded-lg bg-forest-ink flex items-center justify-center flex-shrink-0`}>
+  <div className={`${size === 'sm' ? 'w-8 h-8' : 'w-8 h-8'} rounded-nav bg-forest-ink flex items-center justify-center flex-shrink-0`}>
     <svg className="w-4 h-4 text-linen-white" viewBox="0 0 24 24" fill="none"
       stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
       <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
