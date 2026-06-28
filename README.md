@@ -3,20 +3,7 @@
 A comprehensive care coordination platform that enables chronic disease patients, doctors, and caregivers to manage appointments, medications, and vitals in real time.
 This project demonstrates system architecture, featuring real-time queue management, asynchronous background processing, and role-based access control built on a modern TypeScript stack.
 
-Live demo: https://smartcare.app/
-
----
-
-## Screenshots
-
-**Dashboard**
-![Dashboard screenshot](https://image.png)
-
-**Live Queue & Appointment Tracking**
-![Feature screenshot](https://image.png)
-
-**Medication Adherence View**
-![Mobile screenshot](https:image.png)
+Live demo: https://smart-care-theta.vercel.app/
 
 ---
 
