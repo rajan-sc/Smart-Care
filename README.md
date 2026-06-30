@@ -1,7 +1,7 @@
 # SmartCare
 
-A comprehensive care coordination platform that enables chronic disease patients, doctors, and caregivers to manage appointments, medications, and vitals in real time.
-This project demonstrates system architecture, featuring real-time queue management, asynchronous background processing, and role-based access control built on a modern TypeScript stack.
+A care coordination platform that lets chronic-disease patients, doctors, and caregivers manage appointments, medications, and vitals in real time.
+Built on a TypeScript stack with real-time queue management, asynchronous background processing, and role-based access control.
 
 Live demo: https://smart-care-theta.vercel.app/
 
@@ -10,6 +10,7 @@ Live demo: https://smart-care-theta.vercel.app/
 ## Table of Contents
 
 - [Overview](#overview)
+- [Screenshots](#screenshots)
 - [Features](#features)
 - [Tech Stack](#tech-stack)
 - [Architecture](#architecture)
@@ -18,7 +19,6 @@ Live demo: https://smart-care-theta.vercel.app/
 - [Usage](#usage)
 - [Engineering Decisions](#engineering-decisions)
 - [Roadmap](#roadmap)
-- [Author](#author)
 
 ---
 
@@ -26,9 +26,18 @@ Live demo: https://smart-care-theta.vercel.app/
 
 Managing chronic care involves complex coordination between patients, clinicians, and family caregivers. Traditional clinic workflows rely on disjointed systems, leading to poor medication adherence, opaque clinic wait times, and a lack of continuous health context between visits.
 
-SmartCare solves this by providing a unified clinical portal. It bridges the gap between clinic visits by allowing patients to log daily vitals, track medication streaks, and share medical records securely. For clinics, it introduces a smart queue system that provides real-time token tracking and wait-time estimations, dramatically improving the patient waiting room experience.
+SmartCare solves this by providing a unified clinical portal. It bridges the gap between clinic visits by allowing patients to log daily vitals, track medication streaks, and share medical records securely. For clinics, it introduces a smart queue system that provides real-time token tracking and wait-time estimations, improving the waiting room experience.
 
-Technically, the project explores the challenges of real-time state synchronization and distributed background processing. It leverages Socket.IO for live queue updates and BullMQ with Redis for fault-tolerant medication reminders and nightly analytics aggregation.
+Technically, the project explores real-time state synchronization and distributed background processing. It uses Socket.IO for live queue updates and BullMQ with Redis for fault-tolerant medication reminders and nightly analytics aggregation.
+
+---
+
+## Screenshots
+
+| Patient Portal | Doctor Portal | Caregiver Portal |
+|---|---|---|
+| ![Patient dashboard](docs/screenshots/patient-portal-dashboard.png) | ![Doctor queue and e-prescription](docs/screenshots/doctor-portal-queue-prescription.png) | ![Caregiver vitals and alerts](docs/screenshots/caregiver-portal-vitals-alerts.png) |
+| Overview with medication streak and adherence | Live queue with clinical notes and e-prescription | Vitals history with patient alert notifications |
 
 ---
 
@@ -50,22 +59,22 @@ Technically, the project explores the challenges of real-time state synchronizat
 
 | Technology | Purpose |
 |---|---|
-| React 19 | Core UI library utilizing modern concurrent rendering |
-| Vite | Lightning-fast build tooling and hot module replacement |
-| TailwindCSS | Utility-first styling for building the proprietary design system |
+| React 19 | Core UI library using concurrent rendering |
+| Vite | Build tooling and hot module replacement |
+| TailwindCSS | Utility-first styling for the design system |
 | React Query | Server state synchronization, caching, and request deduping |
 | Socket.IO Client | Real-time bidirectional communication for queue tokens |
-| Chart.js | Visualizing longitudinal vital trends and adherence analytics |
+| Chart.js | Visualizing vital trends and adherence analytics |
 
 **Backend**
 
 | Technology | Purpose |
 |---|---|
-| Node.js & Express | High-performance, unopinionated API routing layer |
+| Node.js & Express | API routing layer |
 | TypeScript | End-to-end type safety across domain models and API contracts |
 | Prisma ORM | Type-safe database queries and schema migration management |
 | Socket.IO | Emitting real-time queue and status updates to connected clients |
-| BullMQ & Redis | Robust, Redis-backed message queue for background jobs |
+| BullMQ & Redis | Redis-backed message queue for background jobs |
 | JWT & bcryptjs | Stateless authentication and secure password hashing |
 
 **Infrastructure / Tooling**
@@ -74,14 +83,14 @@ Technically, the project explores the challenges of real-time state synchronizat
 |---|---|
 | PostgreSQL | Primary relational datastore handling complex domain relationships |
 | Redis | In-memory store for session caching and job queues |
-| AWS S3 | Secure, scalable object storage for medical records |
+| AWS S3 | Object storage for medical records |
 | Brevo | Transactional email delivery for notifications and verifications |
 
 ---
 
 ## Architecture
 
-SmartCare follows a modular, layered architecture designed for separation of concerns and scalability. The client applications (React SPA and mobile views) communicate with the backend via a RESTful Express API for standard CRUD operations and via Socket.IO for real-time events.
+SmartCare follows a modular, layered architecture designed for separation of concerns and scalability. The React single-page application communicates with the backend via a RESTful Express API for standard CRUD operations and via Socket.IO for real-time events.
 
 The backend is structured into controllers, services, and data access layers. Background workers independently process heavy tasks such as sending out scheduled medication reminders and generating nightly analytics snapshots. This ensures the main API thread remains unblocked and responsive.
 
@@ -124,6 +133,7 @@ graph TB
     APPT --> PG
     QUEUE --> REDIS
     MED --> BULL
+    CRON --> PG
 ```
 
 ### Database Schema Highlights
@@ -143,8 +153,8 @@ The database is heavily normalized to support the multi-role ecosystem. The `Use
 
 ```bash
 # Clone the repository
-git clone https://github.com/PLACEHOLDER_USERNAME/smartcare.git
-cd smartcare
+git clone https://github.com/rajan-sc/Smart-Care.git
+cd Smart-Care
 
 # Install backend dependencies
 cd server
@@ -228,14 +238,12 @@ Medication adherence relies on timely reminders. Processing these reminders inli
 Calculating a patient's historical medication adherence rate on-the-fly requires scanning potentially thousands of `MedicationLog` rows, an operation that would slow down the dashboard significantly over time. To solve this, a cron job runs nightly to aggregate the previous day's adherence data and inserts a flattened record into an `AnalyticsSnapshot` table. The frontend dashboard then queries these precomputed snapshots, guaranteeing constant-time read performance regardless of the data scale.
 
 ### Component-Level Code Splitting
-The application houses heavily distinct experiences for patients, doctors, and admins. Loading the entire bundle for a patient who will never access the doctor's schedule view is inefficient. The React frontend heavily utilizes `React.lazy` and Suspense to split the codebase at the route level. Heavy charting libraries and specific portal views are only downloaded when the user specifically navigates to those routes, drastically improving the initial Time-to-Interactive (TTI).
+The application houses distinct experiences for patients, doctors, and caregivers. Loading the entire bundle for a patient who will never access the doctor's schedule view is inefficient. The React frontend uses `React.lazy` and Suspense to split the codebase at the route level. Heavy charting libraries and specific portal views are only downloaded when the user navigates to those routes, improving the initial Time-to-Interactive (TTI).
 
 ---
 
 ## Roadmap
 
 - LLM integration for knowing about precautions to take while on medication, diet to follow and other related queries.
-
----
 
 
